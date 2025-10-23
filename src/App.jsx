@@ -1,6 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-// Assuming the CSS import works correctly via vite/main.jsx
-// import './index.css'; 
 
 // Configuration constants
 // Using a robust Solana Mainnet Beta RPC for high reliability on balance checks
@@ -8,7 +6,8 @@ const BSSC_RPC_URL = 'https://api.mainnet-beta.solana.com';
 const GEMINI_MODEL_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 
 // CRITICAL: Retrieve API Key from Vite's standard environment variable
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = typeof import.meta.env.VITE_GEMINI_API_KEY !== 'undefined' ? import.meta.env.VITE_GEMINI_API_KEY : '';
+
 
 // Icon components (lucide-react alternatives)
 const GlobeIcon = (props) => (
@@ -38,7 +37,8 @@ const fetchWithRetry = async (url, options, maxRetries = 3) => {
     for (let i = 0; i < maxRetries; i++) {
         try {
             if (!apiKey) {
-                throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY environment variable.");
+                // If no key is available, fail fast and let the UI display the warning.
+                throw new Error("Gemini API Key is missing. Check VITE_GEMINI_API_KEY.");
             }
             // Append the apiKey to the URL
             const apiUrlWithKey = `${url}?key=${apiKey}`;
@@ -68,7 +68,7 @@ export default function App() {
   const [balance, setBalance] = useState('');
   const [loading, setLoading] = useState(false);
   const [sources, setSources] = useState([]);
-  const [contextSource, setContextSource] = useState('Google Grounding');
+  const [contextSource] = useState('Google Grounding');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Derived state to check if the AI feature is enabled via environment key
@@ -81,11 +81,11 @@ export default function App() {
     setLoading(true);
     setResponse('');
     setSources([]);
-    setContextSource('Google Grounding');
     setBalance('');
 
     let userPrompt = `User Query: ${input}`;
     
+    // --- Define general clean formatting rules ---
     const generalFormattingRules = `
       --- CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT ---
       1. DO NOT use any markdown formatting (NO bolding, NO lists, NO code blocks).
@@ -141,11 +141,12 @@ export default function App() {
 
     } catch (err) {
       console.error('AI Request Error:', err);
+      // Display the specific key missing error or general fetch error
       setResponse(`Error: ${err.message || 'Failed to process your request. Check your VITE_GEMINI_API_KEY.'}`);
     } finally {
       setLoading(false);
     }
-  }, [input]);
+  }, [input, apiKey]);
 
   // Function to check the balance via BSSC RPC (using Solana RPC standard)
   const handleCheckBalance = useCallback(async () => {
@@ -177,17 +178,20 @@ export default function App() {
       const data = await r.json();
 
       if (data.error) {
+        // RPC Error (e.g., address not found, invalid address format)
         setBalance(`RPC Error: ${data.error.message || 'Unknown RPC error.'}`);
       } else if (data.result?.value !== undefined) {
         // Success: convert lamports to BSSC (10^9)
         const balanceValue = data.result.value / 1000000000; 
         setBalance(`Balance: ${balanceValue.toFixed(4)} BSSC`);
       } else {
+        // RPC success but value is null/undefined (e.g., account with 0 balance)
         setBalance('Address found, but current balance is 0 BSSC.');
       }
 
     } catch (err) {
       console.error('RPC Request Error:', err);
+      // Display the failure to connect message
       setBalance('Error: Failed to connect to the BSSC/Solana RPC server. The network might be down or the RPC URL is incorrect.');
     } finally {
       setLoading(false);
@@ -196,6 +200,7 @@ export default function App() {
 
 
   return (
+    // Outer container for full responsiveness and styling
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center font-sans">
       
       {/* HEADER WITH NAVIGATION */}
@@ -271,7 +276,7 @@ export default function App() {
                 <p className="text-sm text-red-300 font-bold">
                     AI Feature Disabled: 
                     <span className="block mt-1 font-normal text-red-200">
-                      The Gemini AI features are disabled. Please set the **VITE_GEMINI_API_KEY** environment variable in your deployment settings.
+                      The Gemini AI features are disabled because the **VITE_GEMINI_API_KEY** environment variable is not set.
                     </span>
                 </p>
             </div>
@@ -291,7 +296,7 @@ export default function App() {
             disabled={!input || loading || !isAIEnabled}
             className="flex-1 px-5 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-blue-500/50 hover:bg-blue-700 disabled:opacity-50 transition-all duration-300 shadow-lg transform hover:scale-[1.01] active:scale-95 disabled:hover:scale-100"
           >
-            {loading ? (
+            {loading && isAIEnabled ? (
               <div className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Analyzing...
@@ -304,7 +309,7 @@ export default function App() {
             disabled={!input || loading}
             className="flex-1 px-5 py-3 bg-green-600 text-white font-bold rounded-xl shadow-green-500/50 hover:bg-green-700 disabled:opacity-50 transition-all duration-300 shadow-lg transform hover:scale-[1.01] active:scale-95 disabled:hover:scale-100"
           >
-            {loading ? (
+            {loading && !isAIEnabled ? (
               <div className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Checking...
