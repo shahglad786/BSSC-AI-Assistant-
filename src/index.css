@@ -4,7 +4,7 @@
 
 @layer base {
   html {
-    /* Use Inter font which is often bundled or easily imported in modern setups */
+    /* Sets the default font to Inter */
     font-family: 'Inter', system-ui, sans-serif; 
     scroll-behavior: smooth;
   }
