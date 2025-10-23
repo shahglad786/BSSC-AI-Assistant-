@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Use Inter font which is often bundled or easily imported in modern setups */
+    font-family: 'Inter', system-ui, sans-serif; 
+    scroll-behavior: smooth;
+  }
+}
