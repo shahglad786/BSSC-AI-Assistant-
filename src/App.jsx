@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 
 // Configuration constants
-// CRITICAL FIX: Switched to a known public RPC that is less likely to block CORS from unknown origins.
+// CRITICAL FIX: Using the user-provided BSSC RPC endpoint.
 const BSSC_RPC_URL = 'https://bssc-rpc.bssc.live'; 
 const GEMINI_MODEL_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 
@@ -200,7 +200,7 @@ export default function App() {
     } catch (err) {
       console.error('RPC Request Error:', err);
       // Display the failure to connect message, including the "Access Forbidden" message if that was the cause.
-      setBalance(`Error: Failed to connect to the BSSC/Solana RPC server. ${err.message || 'The network might be down or the RPC URL is incorrect.'}`);
+      setBalance(`Error: Failed to connect to the BSSC RPC server. ${err.message || 'The network might be down or the RPC URL is incorrect.'}`);
     } finally {
       setLoading(false);
     }
@@ -362,7 +362,7 @@ export default function App() {
       <footer className="mt-auto py-6 text-sm text-gray-500 text-center border-t border-gray-700 w-full bg-gray-800/50">
         <div className="max-w-xl mx-auto px-4">
           <p className="text-gray-400 font-medium mb-1">BSSC Project AI Assistant</p>
-          <p className="text-gray-500">Powered by Gemini 2.5 Flash & Solana RPC Standard</p>
+          <p className="text-gray-500">Powered by Gemini 2.5 Flash & BSSC RPC</p>
         </div>
       </footer>
     </div>
